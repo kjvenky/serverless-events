@@ -2,7 +2,7 @@
 var AWS = require('aws-sdk');
 const uuidv4 = require('uuid/v4');
 var s3 = new AWS.S3();
-var sqs = new AWS.SQS();
+var qs = require('qs')
 
 module.exports.createEvent = (event, context, callback) => {
 
@@ -16,13 +16,18 @@ module.exports.createEvent = (event, context, callback) => {
     }),
   };
 
+  console.log(event);
+
+  // Do any Processing here for backend validations
+  let eventData = qs.parse(event.body)
   var params = {
-            Bucket : 'test-bucket-hyperhuddle',
+            Bucket : process.env.BUCKET_NAME,
             Key : eventId+'.json',
             Body : JSON.stringify({
               eventId,
               eventType: "EventCreated",
-              name: "AWS MeetUps"
+              payload: eventData,
+              version: 1
             })
         }
 

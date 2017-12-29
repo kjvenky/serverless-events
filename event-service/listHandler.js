@@ -20,3 +20,20 @@ module.exports.getEventList = (event, context, callback) => {
 
   callback(null, response);
 };
+
+module.exports.listProjection = (event, context, callback) => {
+
+  let eventId = uuidv4();
+
+  const response = {
+    statusCode: 200,
+    body: JSON.stringify({
+      message: 'GetEventList',
+      eventId
+    }),
+  };
+
+  console.log(event);
+
+  callback(null, response);
+};

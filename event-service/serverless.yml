@@ -40,12 +40,14 @@ provider:
         - - "arn:aws:sqs"
           - "Ref" : "AWS::Region"
           - "Ref" : "AWS::AccountId"
-          - "event-service-dlq"
+          - "${self:service}-${self:provider.stage}-dlq"
 
 custom:
-  defaultStage: dev
+  accountId: 654902931839
+  defaultStage: devt
   profiles:
     dev: icebreaker
+    devt: icebreaker
     prod: icebreaker
 
 # you can define service wide environment variables here
@@ -71,6 +73,7 @@ resources:
           Fn::Join:
             - "-"
             - - ${self:service}
+              - ${self:provider.stage}
               - "dlq"
         MessageRetentionPeriod: 1209600
         VisibilityTimeout: 60
@@ -81,21 +84,46 @@ resources:
           Fn::Join:
             - "-"
             - - ${self:service}
+              - ${self:provider.stage}
               - "tpq"
-
+    EventTopicPolicy:
+      Type: 'AWS::SNS::TopicPolicy'
+      DependsOn: EventTopic
+      Properties:
+        PolicyDocument:
+          Version: '2008-10-17'
+          Statement:
+            - Sid: S3SNSPolicy
+              Effect: Allow
+              Principal:
+                AWS: '*'
+              Resource: 
+                Ref: EventTopic
+              Action: 'sns:publish'
+        Topics:
+          - Ref: EventTopic
+    EventStore:
+      Type: AWS::S3::Bucket
+      DependsOn: EventTopic
+      Properties: 
+         BucketName: ${self:service}-${self:provider.stage}-eventstore
+         NotificationConfiguration:
+          TopicConfigurations:
+            - Topic: arn:aws:sns:${self:provider.region}:${self:custom.accountId}:${self:service}-${self:provider.stage}-tpq
+              Event: s3:ObjectCreated:Put
   Outputs:
     EventDLQueueOutput:
       Description: "Description for the output"
       Value: 
         Fn::GetAtt: ["EventDLQueue", "Arn"]
       Export:
-        Name: "event-service-dlq"
+        Name: "${self:service}-${self:provider.stage}-dlq"
     EventTopicOutput:
       Description: "Description for the output"
       Value: 
         Fn::GetAtt: ["EventTopic", "TopicName"]
       Export:
-        Name: "event-service-tpq"
+        Name: "${self:service}-${self:provider.stage}-tpq"
 
 functions:
   createEvent:
@@ -103,18 +131,8 @@ functions:
     description: Saved EventCreated to S3
     tags:
       foo: bar
-    onError:
-      Fn::ImportValue:
-          Fn::Join:
-            - "-"
-            - - ${self:service}
-              - "dlq"
     environment:
-      MESSAGE_TOPIC: 
-        Fn::Join:
-            - "-"
-            - - ${self:service}
-              - "tpq"
+      BUCKET_NAME: ${self:service}-${self:provider.stage}-eventstore
     events:
       - http:
           path: event
@@ -124,12 +142,8 @@ functions:
   getEvent:
     handler: getHandler.getEvent
     description: Get Event Data from S3 Projections
-    onError:
-      Fn::ImportValue:
-          Fn::Join:
-            - "-"
-            - - ${self:service}
-              - "dlq"
+    environment:
+      BUCKET_NAME: ${self:service}-${self:provider.stage}-eventstore
     events:
       - http:
           path: event/{id}
@@ -143,12 +157,6 @@ functions:
   updateEvent:
     handler: updateHandler.updateEvent
     description: Get Event Data from S3 Projections
-    onError:
-      Fn::ImportValue:
-          Fn::Join:
-            - "-"
-            - - ${self:service}
-              - "dlq"
     events:
       - http:
           path: event
@@ -158,12 +166,6 @@ functions:
   deleteEvent:
     handler: deleteHandler.deleteEvent
     description: Event Data from S3 based on the event key
-    onError:
-      Fn::ImportValue:
-          Fn::Join:
-            - "-"
-            - - ${self:service}
-              - "dlq"
     events:
       - http:
           path: event
@@ -173,55 +175,14 @@ functions:
   listEvents:
     handler: listHandler.getEventList
     description: Event Data from S3 based on the event key
-    onError:
-      Fn::ImportValue:
-          Fn::Join:
-            - "-"
-            - - ${self:service}
-              - "dlq"
     events:
       - http:
           path: event/list
           method: get
           cors: true
-      - sns:
-          arn: 
-            Fn::Join:
-              - ":"
-              - - "arn:aws:sqs"
-                - "Ref" : "AWS::Region"
-                - "Ref" : "AWS::AccountId"
-                - "event-service-tpq"
-          topicName: "event-service-tpq"
-
-#    The following are a few example events you can configure
-#    NOTE: Please make sure to change your handler code to work with those events
-#    Check the event documentation for details
-#    events:
-#      - http:
-#          path: users/create
-#          method: get
-#      - s3: ${env:BUCKET}
-#      - schedule: rate(10 minutes)
-#      - sns: greeter-topic
-#      - stream: arn:aws:dynamodb:region:XXXXXX:table/foo/stream/1970-01-01T00:00:00.000
-#      - alexaSkill
-#      - iot:
-#          sql: "SELECT * FROM 'some_topic'"
-#      - cloudwatchEvent:
-#          event:
-#            source:
-#              - "aws.ec2"
-#            detail-type:
-#              - "EC2 Instance State-change Notification"
-#            detail:
-#              state:
-#                - pending
-#      - cloudwatchLog: '/aws/lambda/hello'
-#      - cognitoUserPool:
-#          pool: MyUserPool
-#          trigger: PreSignUp
-
-#    Define function environment variables here
-#    environment:
-#      variable2: value2
+  
+  listProjection:
+    handler: listHandler.listProjection
+    description: Event Data from S3 based on the event key
+    events:
+      - sns: arn:aws:sns:${self:provider.region}:${self:custom.accountId}:${self:service}-${self:provider.stage}-tpq

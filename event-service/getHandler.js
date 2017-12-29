@@ -4,7 +4,7 @@ var s3 = new AWS.S3();
   
 module.exports.getEvent = (event, context, cb) => {
   let eventId = event.pathParameters.id;
-  var  bucketName = 'test-bucket-hyperhuddle';
+  var  bucketName = process.env.BUCKET_NAME;
   var  keyName = eventId + '.json';
 
   readFile(bucketName, keyName, readFileContent, onError, cb);
@@ -26,10 +26,9 @@ function readFileContent(filename, data, cb) {
 		statusCode: 200,
 	    body: JSON.stringify({
 	      message: 'EventData!',
-	      data
+	      data: JSON.parse(data).payload
 	    })
 	}
-	console.log(data)
 	cb(null, response)
 }
         
