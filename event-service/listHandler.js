@@ -16,24 +16,14 @@ module.exports.getEventList = (event, context, callback) => {
     }),
   };
 
-  console.log(event);
-
   callback(null, response);
 };
 
 module.exports.listProjection = (event, context, callback) => {
 
-  let eventId = uuidv4();
-
-  const response = {
-    statusCode: 200,
-    body: JSON.stringify({
-      message: 'GetEventList',
-      eventId
-    }),
-  };
-
-  console.log(event);
-
-  callback(null, response);
+  // Is it possible for multiple SNS message delivered at once?
+  let snsMessage = JSON.parse(event.Records[0].Sns.Message); 
+  console.log(JSON.parse(event.Records[0].Sns.Message).Records[0].eventTime);
+  console.log(JSON.parse(event.Records[0].Sns.Message).Records[0].s3.object);
+  console.log(JSON.parse(event.Records[0].Sns.Message).Records[0].s3.object.key);
 };

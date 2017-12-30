@@ -1,42 +1,41 @@
 'use strict';
 var AWS = require('aws-sdk');
 const uuidv4 = require('uuid/v4');
-var s3 = new AWS.S3();
 var qs = require('qs')
+var S3Handler = require('S3Handler');
 
 module.exports.createEvent = (event, context, callback) => {
 
+  // Do any Processing here for backend validations before accepting the event
   let eventId = uuidv4();
+  let eventData = qs.parse(event.body);
 
-  const response = {
-    statusCode: 200,
-    body: JSON.stringify({
-      message: 'EventCreated',
-      eventId
-    }),
-  };
+  eventData.versionId =  1;
+  eventData.status =  'CREATED';
+  eventData.eventId =  eventId;
 
-  console.log(event);
+  let Bucket = process.env.EVENT_STORE_BUCKET;
+  let Key = eventId + '/' + uuidv4() + '.json';
+  let Body =  JSON.stringify({
+                eventId,
+                eventType: "EventCreated",
+                payload: eventData
+              });
 
-  // Do any Processing here for backend validations
-  let eventData = qs.parse(event.body)
-  var params = {
-            Bucket : process.env.BUCKET_NAME,
-            Key : eventId+'.json',
-            Body : JSON.stringify({
-              eventId,
-              eventType: "EventCreated",
-              payload: eventData,
-              version: 1
-            })
-        }
+  S3Handler.saveFile(Bucket, Key, Body).then(function(err, data) {
+      if (err) callback(err, err.stack);
 
-  s3.putObject(params, function(err, data) {
-    if (err)  { 
-      callback(err, err.stack); // an error occurred
-    } else { 
+      let response = {
+        statusCode: 200,
+        body: JSON.stringify({
+          message: 'EventCreated',
+          eventId
+        }),
+      };
+
       callback(null, response); // successful response
-    }
-  });
+    }).catch(function(err){
+      callback(null, err);
+  })
   
 };

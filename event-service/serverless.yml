@@ -85,7 +85,7 @@ resources:
             - "-"
             - - ${self:service}
               - ${self:provider.stage}
-              - "tpq"
+              - "topic"
     EventTopicPolicy:
       Type: 'AWS::SNS::TopicPolicy'
       DependsOn: EventTopic
@@ -109,8 +109,13 @@ resources:
          BucketName: ${self:service}-${self:provider.stage}-eventstore
          NotificationConfiguration:
           TopicConfigurations:
-            - Topic: arn:aws:sns:${self:provider.region}:${self:custom.accountId}:${self:service}-${self:provider.stage}-tpq
+            - Topic: arn:aws:sns:${self:provider.region}:${self:custom.accountId}:${self:service}-${self:provider.stage}-topic
               Event: s3:ObjectCreated:Put
+    GetEventProjection:
+      Type: AWS::S3::Bucket
+      Properties: 
+         BucketName: ${self:service}-${self:provider.stage}-events
+
   Outputs:
     EventDLQueueOutput:
       Description: "Description for the output"
@@ -123,7 +128,7 @@ resources:
       Value: 
         Fn::GetAtt: ["EventTopic", "TopicName"]
       Export:
-        Name: "${self:service}-${self:provider.stage}-tpq"
+        Name: "${self:service}-${self:provider.stage}-topic"
 
 functions:
   createEvent:
@@ -132,31 +137,18 @@ functions:
     tags:
       foo: bar
     environment:
-      BUCKET_NAME: ${self:service}-${self:provider.stage}-eventstore
+      EVENT_STORE_BUCKET: ${self:service}-${self:provider.stage}-eventstore
     events:
       - http:
           path: event
           method: post
           cors: true
 
-  getEvent:
-    handler: getHandler.getEvent
-    description: Get Event Data from S3 Projections
-    environment:
-      BUCKET_NAME: ${self:service}-${self:provider.stage}-eventstore
-    events:
-      - http:
-          path: event/{id}
-          method: get
-          cors: true
-          request: 
-          parameters: 
-             paths: 
-               id: true
-
   updateEvent:
     handler: updateHandler.updateEvent
     description: Get Event Data from S3 Projections
+    environment:
+      EVENT_STORE_BUCKET: ${self:service}-${self:provider.stage}-eventstore
     events:
       - http:
           path: event
@@ -171,6 +163,15 @@ functions:
           path: event
           method: delete
           cors: true
+  
+  eventDataProjection:
+    handler: projections.manageEventData
+    description: Maintains the status of the event data
+    environment:
+      EVENT_STORE_BUCKET: ${self:service}-${self:provider.stage}-eventstore
+      EVENTS_BUCKET: ${self:service}-${self:provider.stage}-events
+    events:
+      - sns: arn:aws:sns:${self:provider.region}:${self:custom.accountId}:${self:service}-${self:provider.stage}-topic
 
   listEvents:
     handler: listHandler.getEventList
@@ -180,9 +181,18 @@ functions:
           path: event/list
           method: get
           cors: true
-  
-  listProjection:
-    handler: listHandler.listProjection
-    description: Event Data from S3 based on the event key
+
+  getEvent:
+    handler: getHandler.getEvent
+    description: Get Event Data from S3 Projections
+    environment:
+      EVENTS_BUCKET: ${self:service}-${self:provider.stage}-events
     events:
-      - sns: arn:aws:sns:${self:provider.region}:${self:custom.accountId}:${self:service}-${self:provider.stage}-tpq
+      - http:
+          path: event/{id}
+          method: get
+          cors: true
+          request: 
+          parameters: 
+             paths: 
+               id: true
