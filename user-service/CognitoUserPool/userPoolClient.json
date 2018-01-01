@@ -1,0 +1,9 @@
+{
+  "UserPoolId": "us-west-2_sABmxBN8b",
+  "ClientName": "6fmfte841ej91b1fbdtqqco2pq",
+  "GenerateSecret": false,
+  "RefreshTokenValidity": 30,
+  "ExplicitAuthFlows": [
+    "ADMIN_NO_SRP_AUTH"
+  ]
+}

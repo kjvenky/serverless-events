@@ -1,0 +1,9 @@
+{
+  "AuthFlow": "ADMIN_NO_SRP_AUTH",
+  "AuthParameters": {
+    "USERNAME": "kjvenky",
+    "PASSWORD": "Lopa123#"
+  },
+  "ClientId": "6fmfte841ej91b1fbdtqqco2pq",
+  "UserPoolId": "us-west-2_sABmxBN8b"
+}
