@@ -10,11 +10,12 @@ module.exports.getEvent = (event, context, cb) => {
   var keyName = eventId + '.json';
 
   S3Handler.readFile(bucketName, keyName).then(function(data) {
+  	console.log(data)
   	let response = {
 		statusCode: 200,
 	    body: JSON.stringify({
 	      message: 'EventData',
-	      data: JSON.parse(data).payload
+	      data: JSON.parse(data)
 	    })
 	}
 	cb(null, response);
