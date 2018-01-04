@@ -37,138 +37,133 @@ custom:
 
 resources:
   Resources:
-    CognitoUserPoolUserPool:
+    # Cognito - User pool
+    CognitoUserPoolServerlessUserPool:
       Type: AWS::Cognito::UserPool
-      
-# resources:
-#   Resources:
-#     # Cognito - User pool
-#     CognitoUserPool:
-#       Type: AWS::Cognito::UserPool
-#       Properties:
-#         UserPoolName: app_user_pool
-#     # Cognito - Client
-#     CognitoUserPoolClient:
-#       Type: AWS::Cognito::UserPoolClient
-#       Properties:
-#         ClientName: app_pool_client
-#         UserPoolId:
-#           Ref: CognitoUserPool
-#     # Cognito - Identity
-#     CognitoIdentityPool:
-#       Type: AWS::Cognito::IdentityPool
-#       Properties:
-#         IdentityPoolName: app_identity_pool
-#         AllowUnauthenticatedIdentities: false
-#         CognitoIdentityProviders:
-#           - ClientId:
-#               Ref: CognitoUserPoolClient
-#             ProviderName:
-#               Fn::GetAtt: [CognitoUserPool, ProviderName]
-#     # Cognito roles
-#     CognitoIdentityPoolRoles:
-#       Type: AWS::Cognito::IdentityPoolRoleAttachment
-#       Properties:
-#         IdentityPoolId:
-#           Ref: CognitoIdentityPool
-#         Roles:
-#           authenticated:
-#             Fn::GetAtt: [CognitoAuthRole, Arn]
-#           unauthenticated:
-#             Fn::GetAtt: [CognitoUnauthRole, Arn]
-#     CognitoAuthRole:
-#       Type: AWS::IAM::Role
-#       Properties:
-#         RoleName: appAuthRole
-#         Path: /
-#         AssumeRolePolicyDocument:
-#           Version: "2012-10-17"
-#           Statement:
-#             - Effect: "Allow"
-#               Principal:
-#                 Federated: "cognito-identity.amazonaws.com"
-#               Action:
-#                 - "sts:AssumeRoleWithWebIdentity"
-#               Condition:
-#                 StringEquals:
-#                   "cognito-identity.amazonaws.com:aud":
-#                     Ref: CognitoIdentityPool
-#                 "ForAnyValue:StringLike":
-#                   "cognito-identity.amazonaws.com:amr": authenticated
-#         Policies:
-#           - PolicyName: "CognitoAuthorizedPolicy"
-#             PolicyDocument:
-#               Version: "2012-10-17"
-#               Statement:
-#                 - Effect: "Allow"
-#                   Action:
-#                     - "mobileanalytics:PutEvents"
-#                     - "cognito-sync:*"
-#                     - "cognito-identity:*"
-#                   Resource: "*"
-#                 - Effect: "Allow"
-#                   Action:
-#                     - "lambda:InvokeFunction"
-#                   Resource: "*"
-#     CognitoUnauthRole:
-#       Type: AWS::IAM::Role
-#       Properties:
-#         RoleName: appUnauthRole
-#         Path: /
-#         AssumeRolePolicyDocument:
-#           Version: "2012-10-17"
-#           Statement:
-#             - Effect: "Allow"
-#               Principal:
-#                 Federated: "cognito-identity.amazonaws.com"
-#               Action:
-#                 - "sts:AssumeRoleWithWebIdentity"
-#               Condition:
-#                 StringEquals:
-#                   "cognito-identity.amazonaws.com:aud":
-#                     Ref: CognitoIdentityPool
-#                 "ForAnyValue:StringLike":
-#                   "cognito-identity.amazonaws.com:amr": unauthenticated
-#         Policies:
-#           - PolicyName: "CognitoUnauthorizedPolicy"
-#             PolicyDocument:
-#               Version: "2012-10-17"
-#               Statement:
-#                 - Effect: "Allow"
-#                   Action:
-#                     - "mobileanalytics:PutEvents"
-#                     - "cognito-sync:*"
-#                     - "cognito-identity:*"
-#                   Resource: "*"
-#                 - Effect: "Allow"
-#                   Action:
-#                     - "lambda:InvokeFunction"
-#                   Resource: "*"
-#   Outputs:
-#     CognitoUserPool:
-#       Description: "Description for the output"
-#       Value: 
-#         Ref: CognitoUserPool
-#       Export:
-#         Name: "${self:service}-${self:provider.stage}-user-pool"
-#     CognitoUserPoolArn:
-#       Description: "Description for the output"
-#       Value: 
-#         Fn::GetAtt: [CognitoUserPool, Arn]
-#       Export:
-#         Name: "${self:service}-${self:provider.stage}-user-pool-arn"  
-#     CognitoUserPoolClient:
-#       Description: "Description for the output"
-#       Value: 
-#         Ref: CognitoUserPoolClient
-#       Export:
-#         Name: "${self:service}-${self:provider.stage}-user-pool-client"
-#     CognitoIdentityPool:
-#       Description: "Description for the output"
-#       Value: 
-#         Ref: CognitoIdentityPool
-#       Export:
-#         Name: "${self:service}-${self:provider.stage}-id-pool"  
+      Properties:
+        UserPoolName: app_user_pool
+    # Cognito - Client
+    CognitoUserPoolClient:
+      Type: AWS::Cognito::UserPoolClient
+      Properties:
+        ClientName: app_pool_client
+        UserPoolId:
+          Ref: CognitoUserPoolServerlessUserPool
+    # Cognito - Identity
+    CognitoIdentityPool:
+      Type: AWS::Cognito::IdentityPool
+      Properties:
+        IdentityPoolName: app_identity_pool
+        AllowUnauthenticatedIdentities: false
+        CognitoIdentityProviders:
+          - ClientId:
+              Ref: CognitoUserPoolClient
+            ProviderName:
+              Fn::GetAtt: [CognitoUserPoolServerlessUserPool, ProviderName]
+    # Cognito roles
+    CognitoIdentityPoolRoles:
+      Type: AWS::Cognito::IdentityPoolRoleAttachment
+      Properties:
+        IdentityPoolId:
+          Ref: CognitoIdentityPool
+        Roles:
+          authenticated:
+            Fn::GetAtt: [CognitoAuthRole, Arn]
+          unauthenticated:
+            Fn::GetAtt: [CognitoUnauthRole, Arn]
+    CognitoAuthRole:
+      Type: AWS::IAM::Role
+      Properties:
+        RoleName: appAuthRole
+        Path: /
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: "Allow"
+              Principal:
+                Federated: "cognito-identity.amazonaws.com"
+              Action:
+                - "sts:AssumeRoleWithWebIdentity"
+              Condition:
+                StringEquals:
+                  "cognito-identity.amazonaws.com:aud":
+                    Ref: CognitoIdentityPool
+                "ForAnyValue:StringLike":
+                  "cognito-identity.amazonaws.com:amr": authenticated
+        Policies:
+          - PolicyName: "CognitoAuthorizedPolicy"
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: "Allow"
+                  Action:
+                    - "mobileanalytics:PutEvents"
+                    - "cognito-sync:*"
+                    - "cognito-identity:*"
+                  Resource: "*"
+                - Effect: "Allow"
+                  Action:
+                    - "lambda:InvokeFunction"
+                  Resource: "*"
+    CognitoUnauthRole:
+      Type: AWS::IAM::Role
+      Properties:
+        RoleName: appUnauthRole
+        Path: /
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: "Allow"
+              Principal:
+                Federated: "cognito-identity.amazonaws.com"
+              Action:
+                - "sts:AssumeRoleWithWebIdentity"
+              Condition:
+                StringEquals:
+                  "cognito-identity.amazonaws.com:aud":
+                    Ref: CognitoIdentityPool
+                "ForAnyValue:StringLike":
+                  "cognito-identity.amazonaws.com:amr": unauthenticated
+        Policies:
+          - PolicyName: "CognitoUnauthorizedPolicy"
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: "Allow"
+                  Action:
+                    - "mobileanalytics:PutEvents"
+                    - "cognito-sync:*"
+                    - "cognito-identity:*"
+                  Resource: "*"
+                - Effect: "Allow"
+                  Action:
+                    - "lambda:InvokeFunction"
+                  Resource: "*"
+  Outputs:
+    CognitoUserPool:
+      Description: "Description for the output"
+      Value: 
+        Ref: CognitoUserPoolServerlessUserPool
+      Export:
+        Name: "${self:service}-${self:provider.stage}-user-pool"
+    CognitoUserPoolArn:
+      Description: "Description for the output"
+      Value: 
+        Fn::GetAtt: [CognitoUserPoolServerlessUserPool, Arn]
+      Export:
+        Name: "${self:service}-${self:provider.stage}-user-pool-arn"  
+    CognitoUserPoolClient:
+      Description: "Description for the output"
+      Value: 
+        Ref: CognitoUserPoolClient
+      Export:
+        Name: "${self:service}-${self:provider.stage}-user-pool-client"
+    CognitoIdentityPool:
+      Description: "Description for the output"
+      Value: 
+        Ref: CognitoIdentityPool
+      Export:
+        Name: "${self:service}-${self:provider.stage}-id-pool"  
 
 # you can overwrite defaults here
 #  stage: dev
@@ -208,5 +203,7 @@ functions:
     handler: preSignUp.handler
     events:
       - cognitoUserPool:
-          pool: UserPool
+          pool: ServerlessUserPool
           trigger: PreSignUp
+
+      
