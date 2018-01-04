@@ -1,0 +1,212 @@
+# Welcome to Serverless!
+#
+# This file is the main config file for your service.
+# It's very minimal at this point and uses default values.
+# You can always add more config options for more control.
+# We've included some commented out config examples here.
+# Just uncomment any of them to get that config option.
+#
+# For full config options, check the docs:
+#    docs.serverless.com
+#
+# Happy Coding!
+
+service: cognito-service
+
+
+# You can pin your service to only deploy with a specific Serverless version
+# Check out our docs for more details
+frameworkVersion: "=1.25.0"
+
+provider:
+  name: aws
+  runtime: nodejs6.10
+  region: us-west-2
+  memorySize: 512
+  timeout: 6
+  versionFunctions: true
+  stage: ${opt:stage, self:custom.defaultStage}
+  profile: ${self:custom.profiles.${self:provider.stage}}
+
+custom:
+  defaultStage: devt
+  profiles:
+    dev: icebreaker
+    devt: icebreaker
+    prod: icebreaker
+
+resources:
+  Resources:
+    CognitoUserPoolUserPool:
+      Type: AWS::Cognito::UserPool
+      
+# resources:
+#   Resources:
+#     # Cognito - User pool
+#     CognitoUserPool:
+#       Type: AWS::Cognito::UserPool
+#       Properties:
+#         UserPoolName: app_user_pool
+#     # Cognito - Client
+#     CognitoUserPoolClient:
+#       Type: AWS::Cognito::UserPoolClient
+#       Properties:
+#         ClientName: app_pool_client
+#         UserPoolId:
+#           Ref: CognitoUserPool
+#     # Cognito - Identity
+#     CognitoIdentityPool:
+#       Type: AWS::Cognito::IdentityPool
+#       Properties:
+#         IdentityPoolName: app_identity_pool
+#         AllowUnauthenticatedIdentities: false
+#         CognitoIdentityProviders:
+#           - ClientId:
+#               Ref: CognitoUserPoolClient
+#             ProviderName:
+#               Fn::GetAtt: [CognitoUserPool, ProviderName]
+#     # Cognito roles
+#     CognitoIdentityPoolRoles:
+#       Type: AWS::Cognito::IdentityPoolRoleAttachment
+#       Properties:
+#         IdentityPoolId:
+#           Ref: CognitoIdentityPool
+#         Roles:
+#           authenticated:
+#             Fn::GetAtt: [CognitoAuthRole, Arn]
+#           unauthenticated:
+#             Fn::GetAtt: [CognitoUnauthRole, Arn]
+#     CognitoAuthRole:
+#       Type: AWS::IAM::Role
+#       Properties:
+#         RoleName: appAuthRole
+#         Path: /
+#         AssumeRolePolicyDocument:
+#           Version: "2012-10-17"
+#           Statement:
+#             - Effect: "Allow"
+#               Principal:
+#                 Federated: "cognito-identity.amazonaws.com"
+#               Action:
+#                 - "sts:AssumeRoleWithWebIdentity"
+#               Condition:
+#                 StringEquals:
+#                   "cognito-identity.amazonaws.com:aud":
+#                     Ref: CognitoIdentityPool
+#                 "ForAnyValue:StringLike":
+#                   "cognito-identity.amazonaws.com:amr": authenticated
+#         Policies:
+#           - PolicyName: "CognitoAuthorizedPolicy"
+#             PolicyDocument:
+#               Version: "2012-10-17"
+#               Statement:
+#                 - Effect: "Allow"
+#                   Action:
+#                     - "mobileanalytics:PutEvents"
+#                     - "cognito-sync:*"
+#                     - "cognito-identity:*"
+#                   Resource: "*"
+#                 - Effect: "Allow"
+#                   Action:
+#                     - "lambda:InvokeFunction"
+#                   Resource: "*"
+#     CognitoUnauthRole:
+#       Type: AWS::IAM::Role
+#       Properties:
+#         RoleName: appUnauthRole
+#         Path: /
+#         AssumeRolePolicyDocument:
+#           Version: "2012-10-17"
+#           Statement:
+#             - Effect: "Allow"
+#               Principal:
+#                 Federated: "cognito-identity.amazonaws.com"
+#               Action:
+#                 - "sts:AssumeRoleWithWebIdentity"
+#               Condition:
+#                 StringEquals:
+#                   "cognito-identity.amazonaws.com:aud":
+#                     Ref: CognitoIdentityPool
+#                 "ForAnyValue:StringLike":
+#                   "cognito-identity.amazonaws.com:amr": unauthenticated
+#         Policies:
+#           - PolicyName: "CognitoUnauthorizedPolicy"
+#             PolicyDocument:
+#               Version: "2012-10-17"
+#               Statement:
+#                 - Effect: "Allow"
+#                   Action:
+#                     - "mobileanalytics:PutEvents"
+#                     - "cognito-sync:*"
+#                     - "cognito-identity:*"
+#                   Resource: "*"
+#                 - Effect: "Allow"
+#                   Action:
+#                     - "lambda:InvokeFunction"
+#                   Resource: "*"
+#   Outputs:
+#     CognitoUserPool:
+#       Description: "Description for the output"
+#       Value: 
+#         Ref: CognitoUserPool
+#       Export:
+#         Name: "${self:service}-${self:provider.stage}-user-pool"
+#     CognitoUserPoolArn:
+#       Description: "Description for the output"
+#       Value: 
+#         Fn::GetAtt: [CognitoUserPool, Arn]
+#       Export:
+#         Name: "${self:service}-${self:provider.stage}-user-pool-arn"  
+#     CognitoUserPoolClient:
+#       Description: "Description for the output"
+#       Value: 
+#         Ref: CognitoUserPoolClient
+#       Export:
+#         Name: "${self:service}-${self:provider.stage}-user-pool-client"
+#     CognitoIdentityPool:
+#       Description: "Description for the output"
+#       Value: 
+#         Ref: CognitoIdentityPool
+#       Export:
+#         Name: "${self:service}-${self:provider.stage}-id-pool"  
+
+# you can overwrite defaults here
+#  stage: dev
+#  region: us-east-1
+
+# you can add statements to the Lambda function's IAM Role here
+#  iamRoleStatements:
+#    - Effect: "Allow"
+#      Action:
+#        - "s3:ListBucket"
+#      Resource: { "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "ServerlessDeploymentBucket" } ] ]  }
+#    - Effect: "Allow"
+#      Action:
+#        - "s3:PutObject"
+#      Resource:
+#        Fn::Join:
+#          - ""
+#          - - "arn:aws:s3:::"
+#            - "Ref" : "ServerlessDeploymentBucket"
+#            - "/*"
+
+# you can define service wide environment variables here
+#  environment:
+#    variable1: value1
+
+# you can add packaging information here
+#package:
+#  include:
+#    - include-me.js
+#    - include-me-dir/**
+#  exclude:
+#    - exclude-me.js
+#    - exclude-me-dir/**
+
+functions:
+  preSignUp:
+    handler: preSignUp.handler
+    events:
+      - cognitoUserPool:
+          pool: UserPool
+          trigger: PreSignUp

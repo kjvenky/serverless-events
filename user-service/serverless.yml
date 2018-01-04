@@ -15,7 +15,7 @@ service: user-service
 
 # You can pin your service to only deploy with a specific Serverless version
 # Check out our docs for more details
-# frameworkVersion: "=X.X.X"
+frameworkVersion: "=1.25.0"
 
 provider:
   name: aws
@@ -43,15 +43,13 @@ provider:
           - "${self:service}-${self:provider.stage}-dlq"
 
 custom:
-  accountId: 654902931839
-  PoolId: 6fmfte841ej91b1fbdtqqco2pq
   defaultStage: devt
   profiles:
     dev: icebreaker
     devt: icebreaker
     prod: icebreaker
 
-# you can overwrite defaults here
+
 #  stage: dev
 #  region: us-east-1
 
@@ -90,25 +88,15 @@ functions:
     events:
       - http:
           path: auth/hello
-          method: post
-          integration: lambda
+          method: get
           cors: true
-          authorizer:
-            arn: arn:aws:cognito-idp::${self:custom.accountId}:userpool/${self:custom.PoolId}
-            claims:
-              - email
+
   goodNight:
     handler: handler.goodNight
     events:
       - http:
           path: auth/good-night
-          method: post
-          integration: lambda
-          cors: true
-          authorizer:
-            arn: arn:aws:cognito-idp::${self:custom.accountId}:userpool/${self:custom.PoolId}
-            claims:
-              - email
+          method: get
 
 #    The following are a few example events you can configure
 #    NOTE: Please make sure to change your handler code to work with those events
